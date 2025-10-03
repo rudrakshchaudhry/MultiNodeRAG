@@ -52,6 +52,12 @@ index_data/
 *.log
 *.pid
 
+# Cloudflare Tunnel (PRESERVE THESE FILES)
+!cloudflared
+!tunnel.log
+!tunnel.pid
+!scripts/manage_external_access.sh
+
 # Model files
 *.bin
 *.safetensors
