@@ -13,9 +13,9 @@ from typing import List, Tuple
 from config import CHUNK_SIZE, CHUNK_OVERLAP, ENABLE_MATH_ENHANCEMENT
 
 # Paths
-MARKDOWN_DIR = '/home/rchaudhry_umass_edu/rag/dolphinOcr/pdf_processing/output/markdown'
-JSON_DIR = '/home/rchaudhry_umass_edu/rag/dolphinOcr/pdf_processing/output/recognition_json'
-INDEX_DIR = '/home/rchaudhry_umass_edu/rag/dolphinOcr/rag_creation/index_data'
+MARKDOWN_DIR = '/home/rchaudhry_umass_edu/rag/pdf_processing/output/markdown'
+JSON_DIR = '/home/rchaudhry_umass_edu/rag/pdf_processing/output/recognition_json'
+INDEX_DIR = '/home/rchaudhry_umass_edu/rag/rag_creation/index_data'
 
 # embedding model for mathematical and technical content
 EMBED_MODEL = 'BAAI/bge-small-en-v1.5'  

@@ -12,7 +12,7 @@
 module load python/3.8.18
 
 # Navigate to project directory
-cd /home/rchaudhry_umass_edu/rag/dolphinOcr/ocr
+cd /home/rchaudhry_umass_edu/rag/ocr
 
 # Activate virtual environment
 source ../venv/bin/activate

@@ -106,7 +106,7 @@ docs/_build/
 site/
 
 # Keep essential structure
-!dolphinOcr/rag_creation/index_data/.gitkeep
-!dolphinOcr/pdf_processing/output/.gitkeep
-!dolphinOcr/slurm_output/.gitkeep
-!dolphinOcr/logs/.gitkeep
+!rag_creation/index_data/.gitkeep
+!pdf_processing/output/.gitkeep
+!slurm_output/.gitkeep
+!logs/.gitkeep
