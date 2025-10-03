@@ -63,13 +63,15 @@ config = None
 current_model_config = None
 
 class UniversalModelInterface:
-    """Universal model interface that works with any API"""
+    """Universal model interface that works with any API or local models"""
     
     def __init__(self, model_config: ModelConfig):
         self.model_config = model_config
         self.model_name = model_config.model_name
         self.api_key = model_config.api_key
         self.base_url = model_config.base_url or self._get_default_url()
+        self.local_model = None
+        self.local_tokenizer = None
         
     def _get_default_url(self) -> str:
         """Get default API URL based on model name"""
@@ -85,7 +87,10 @@ class UniversalModelInterface:
     def generate(self, prompt: str, max_tokens: int = 512, temperature: float = 0.7) -> str:
         """Generate text using the configured model"""
         try:
-            if "gemini" in self.model_name.lower():
+            # Check if it's a local model path
+            if "/datasets/" in self.model_name or "/models/" in self.model_name or self.model_name.startswith("/"):
+                return self._call_local_model(prompt, max_tokens, temperature)
+            elif "gemini" in self.model_name.lower():
                 return self._call_gemini(prompt, max_tokens, temperature)
             elif "openai" in self.model_name.lower():
                 return self._call_openai(prompt, max_tokens, temperature)
@@ -165,6 +170,49 @@ class UniversalModelInterface:
         else:
             return "No response generated"
     
+    def _call_local_model(self, prompt: str, max_tokens: int, temperature: float) -> str:
+        """Call local transformers model"""
+        try:
+            # Import transformers only when needed
+            from transformers import AutoTokenizer, AutoModelForCausalLM
+            import torch
+            
+            # Load model and tokenizer if not already loaded
+            if self.local_model is None or self.local_tokenizer is None:
+                print(f"Loading local model from {self.model_name}")
+                self.local_tokenizer = AutoTokenizer.from_pretrained(self.model_name)
+                self.local_model = AutoModelForCausalLM.from_pretrained(
+                    self.model_name,
+                    torch_dtype=torch.float16,
+                    device_map="auto"
+                )
+                print("Local model loaded successfully")
+            
+            # Tokenize input
+            inputs = self.local_tokenizer.encode(prompt, return_tensors="pt")
+            
+            # Generate response
+            with torch.no_grad():
+                outputs = self.local_model.generate(
+                    inputs,
+                    max_new_tokens=max_tokens,
+                    temperature=temperature,
+                    do_sample=True,
+                    pad_token_id=self.local_tokenizer.eos_token_id
+                )
+            
+            # Decode response
+            response = self.local_tokenizer.decode(outputs[0], skip_special_tokens=True)
+            
+            # Remove the input prompt from response
+            if response.startswith(prompt):
+                response = response[len(prompt):].strip()
+            
+            return response
+            
+        except Exception as e:
+            return f"Error with local model: {str(e)}"
+    
     def _call_generic_api(self, prompt: str, max_tokens: int, temperature: float) -> str:
         """Call generic API endpoint"""
         url = f"{self.base_url}/generate"
@@ -204,16 +252,16 @@ async def startup_event():
         retriever = DynamicRetriever()
         print(f"✅ Retriever initialized")
         
-        # Set default model (can be overridden per request)
+        # Set default model (local Qwen model)
         current_model_config = ModelConfig(
-            model_name="gemini-1.5-flash",
-            api_key=os.getenv("GEMINI_API_KEY"),
+            model_name="/datasets/ai/qwen/hub/models--Qwen--Qwen2.5-Math-1.5B-Instruct/snapshots/aafeb0fc6f22cbf0eaeed126eff8be45b0360a35",
             max_tokens=512,
             temperature=0.7
         )
         
         print("🎉 Universal RAG API Server ready!")
-        print("📡 Supports: Gemini, OpenAI, HuggingFace, and custom APIs")
+        print("📡 Supports: Local models, Gemini, OpenAI, HuggingFace, and custom APIs")
+        print(f"🤖 Default model: Qwen2.5-Math-1.5B-Instruct")
         
     except Exception as e:
         print(f"❌ Failed to initialize server: {e}")
@@ -254,8 +302,7 @@ async def query_rag(request: QueryRequest, background_tasks: BackgroundTasks):
             retrieval_result = retriever.retrieve(
                 query=request.query,
                 profile=profile or "general",
-                k=config.start_k,
-                query_metadata=request.query_metadata
+                k=config.start_k
             )
             
             # Generate with context
@@ -316,6 +363,11 @@ async def list_supported_models():
     return {
         "providers": [
             {
+                "name": "Local Models",
+                "models": ["Qwen2.5-Math-1.5B-Instruct", "Any local transformers model"],
+                "description": "Local models via transformers library"
+            },
+            {
                 "name": "Google Gemini",
                 "models": ["gemini-1.5-flash", "gemini-1.5-pro", "gemini-1.0-pro"],
                 "api_key_env": "GEMINI_API_KEY"
@@ -330,7 +382,8 @@ async def list_supported_models():
                 "models": ["microsoft/DialoGPT-medium", "microsoft/DialoGPT-large", "your-fine-tuned-model"],
                 "api_key_env": "HUGGINGFACE_API_KEY"
             }
-        ]
+        ],
+        "current_model": current_model_config.model_name if current_model_config else "unknown"
     }
 
 def format_direct_prompt(query: str) -> str:
