@@ -289,13 +289,6 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - [BAAI/bge-small-en-v1.5](https://huggingface.co/BAAI/bge-small-en-v1.5) for embeddings
 - [FastAPI](https://fastapi.tiangolo.com/) for the API framework
 
-## 📞 Support
-
-For questions and support:
-
-- 📧 Email: [your-email@domain.com]
-- 🐛 Issues: [GitHub Issues](https://github.com/yourusername/MultiNodeRAG/issues)
-- 📖 Documentation: [docs/](docs/)
 
 ---
 
