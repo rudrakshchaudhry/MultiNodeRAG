@@ -9,7 +9,7 @@ cd "$SCRIPT_DIR"
 case "${1:-help}" in
     "start")
         echo "🚀 Starting RAG API Hosting Service..."
-        JOB_ID=$(sbatch scripts/run_universal_rag_hosting.slurm | awk '{print $4}')
+        JOB_ID=$(sbatch run_universal_rag_hosting.slurm | awk '{print $4}')
         echo "✅ RAG API hosting job submitted with ID: $JOB_ID"
         echo "📋 Monitor with: ./manage_rag_hosting.sh status"
         echo "🔗 Check logs with: ./manage_rag_hosting.sh logs"

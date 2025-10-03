@@ -13,10 +13,35 @@ get_current_job_id() {
     squeue -u $USER --format="%.18i %.9P %.20j %.8u %.8T %.10M %.6D %R" | grep "rag_api_" | head -1 | awk '{print $1}'
 }
 
+# Function to get current node from running job
+get_current_node() {
+    local job_id=$(get_current_job_id)
+    if [ -z "$job_id" ]; then
+        return 1
+    fi
+    
+    # Get the node from squeue output
+    local node=$(squeue -j $job_id --noheader --format="%.N" 2>/dev/null | head -1)
+    if [ -n "$node" ]; then
+        echo "$node"
+    else
+        # Fallback: try to get from job info
+        local node=$(scontrol show job $job_id 2>/dev/null | grep "NodeList" | cut -d'=' -f2 | cut -d',' -f1)
+        echo "$node"
+    fi
+}
+
 # Function to start tunnel
 start_tunnel() {
+    local node=$(get_current_node)
+    if [ -z "$node" ]; then
+        echo "❌ Could not determine current node"
+        return 1
+    fi
+    
     echo "🌐 Starting Cloudflare tunnel..."
-    nohup ./cloudflared tunnel --url http://umd-cscdr-gpu001:8081 > tunnel.log 2>&1 &
+    echo "📡 Connecting to: $node:8081"
+    nohup ./cloudflared tunnel --url http://$node:8081 > tunnel.log 2>&1 &
     echo $! > $TUNNEL_PID_FILE
     echo "✅ Tunnel started (PID: $(cat $TUNNEL_PID_FILE))"
 }

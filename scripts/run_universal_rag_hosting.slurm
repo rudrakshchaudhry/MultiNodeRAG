@@ -3,9 +3,9 @@
 #SBATCH --output=slurm_output/rag_api_host_%j.out
 #SBATCH --error=slurm_output/rag_api_host_%j.err
 #SBATCH --partition=gpu-preempt
-#SBATCH --gres=gpu:a100:1
-#SBATCH --cpus-per-task=8
-#SBATCH --mem=32GB
+#SBATCH --gres=gpu:h100:1
+#SBATCH --cpus-per-task=16
+#SBATCH --mem=64GB
 #SBATCH --time=23:30:00
 #SBATCH --signal=SIGTERM@120
 #SBATCH --requeue
@@ -102,19 +102,29 @@ echo "📋 Logs: logs/rag_api.log"
 echo "🔗 API URL: http://$NODE_NAME:$PORT"
 echo ""
 
-# Wait for server to start (model loading can take 2-3 minutes)
-echo "⏳ Waiting for server to start (this may take 2-3 minutes for model loading)..."
-sleep 30
+# Wait for server to start (model loading can take 5-10 minutes with large models)
+echo "⏳ Waiting for server to start (this may take 5-10 minutes for model loading)..."
+sleep 60
 
-# Test if server is running
-if curl -s http://localhost:$PORT/health > /dev/null; then
+# Health check loop with retries
+HEALTH_CHECK_URL="http://localhost:$PORT/health"
+MAX_RETRIES=20 # 20 * 15 seconds = 5 minutes
+RETRY_COUNT=0
+
+while ! curl -s $HEALTH_CHECK_URL > /dev/null && [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
+    echo "⏳ Waiting for RAG API server to start ($((RETRY_COUNT * 15))s elapsed)..."
+    sleep 15
+    RETRY_COUNT=$((RETRY_COUNT + 1))
+done
+
+if [ $RETRY_COUNT -eq $MAX_RETRIES ]; then
+    echo "❌ RAG API server failed to start within the allotted time."
+    exit 1
+else
     echo "✅ RAG API server is running and healthy!"
     echo "🌐 API available at: http://$NODE_NAME:$PORT"
     echo "📊 Health check: http://$NODE_NAME:$PORT/health"
     echo "📋 API docs: http://$NODE_NAME:$PORT/docs"
-else
-    echo "❌ RAG API server failed to start"
-    exit 1
 fi
 
 # Keep the job running and monitor the API

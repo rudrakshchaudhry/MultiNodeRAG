@@ -49,11 +49,23 @@ class ModelConfig(BaseModel):
     max_tokens: int = 512
     temperature: float = 0.7
 
+from contextlib import asynccontextmanager
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Application lifespan manager"""
+    # Startup
+    await startup_event()
+    yield
+    # Shutdown
+    pass
+
 # Initialize FastAPI app
 app = FastAPI(
     title="Universal RAG API",
     description="Deployable RAG system that works with any transformer model",
-    version="1.0.0"
+    version="1.0.0",
+    lifespan=lifespan
 )
 
 # Global variables
@@ -214,32 +226,51 @@ class UniversalModelInterface:
             
             # Load model and tokenizer if not already loaded
             if self.local_model is None or self.local_tokenizer is None:
-                print(f"Loading local model from {self.model_name}")
+                print(f"🔄 Loading local model from {self.model_name}")
+                
+                # Check if model path exists
+                import os
+                if not os.path.exists(self.model_name):
+                    raise FileNotFoundError(f"Model path does not exist: {self.model_name}")
                 
                 # Load tokenizer
+                print("📝 Loading tokenizer...")
                 self.local_tokenizer = AutoTokenizer.from_pretrained(self.model_name)
+                
+                # Add padding token if not present
+                if self.local_tokenizer.pad_token is None:
+                    self.local_tokenizer.pad_token = self.local_tokenizer.eos_token
                 
                 # Check if CUDA is available
                 device = "cuda" if torch.cuda.is_available() else "cpu"
-                print(f"Using device: {device}")
+                print(f"🖥️ Using device: {device}")
                 
                 # Load model with appropriate device configuration
+                print("🧠 Loading model...")
                 if device == "cuda":
+                    # Single GPU optimization without device_map
+                    gpu_count = torch.cuda.device_count()
+                    print(f"🚀 Found {gpu_count} GPU(s), using single GPU optimization")
+                    
                     self.local_model = AutoModelForCausalLM.from_pretrained(
                         self.model_name,
                         torch_dtype=torch.float16,
-                        device_map="auto"
+                        trust_remote_code=True,
+                        low_cpu_mem_usage=True
                     )
+                    # Move to GPU manually
+                    self.local_model = self.local_model.to("cuda:0")
                 else:
                     # For CPU, use float32 and no device_map
                     self.local_model = AutoModelForCausalLM.from_pretrained(
                         self.model_name,
                         torch_dtype=torch.float32,
-                        low_cpu_mem_usage=True
+                        low_cpu_mem_usage=True,
+                        trust_remote_code=True
                     )
                     self.local_model = self.local_model.to(device)
                 
-                print("Local model loaded successfully")
+                print("✅ Local model loaded successfully")
             
             # Tokenize input
             inputs = self.local_tokenizer.encode(prompt, return_tensors="pt")
@@ -248,7 +279,7 @@ class UniversalModelInterface:
             device = next(self.local_model.parameters()).device
             inputs = inputs.to(device)
             
-            # Generate response
+            # Generate response with optimized parameters
             with torch.no_grad():
                 outputs = self.local_model.generate(
                     inputs,
@@ -256,7 +287,10 @@ class UniversalModelInterface:
                     temperature=temperature,
                     do_sample=True,
                     pad_token_id=self.local_tokenizer.eos_token_id,
-                    eos_token_id=self.local_tokenizer.eos_token_id
+                    eos_token_id=self.local_tokenizer.eos_token_id,
+                    attention_mask=torch.ones_like(inputs),  # Fix attention mask warning
+                    use_cache=True,
+                    repetition_penalty=1.1
                 )
             
             # Decode response
@@ -270,8 +304,18 @@ class UniversalModelInterface:
             
         except Exception as e:
             import traceback
-            error_msg = f"Error with local model: {str(e)}\nTraceback: {traceback.format_exc()}"
+            error_msg = f"❌ Error with local model: {str(e)}"
             print(error_msg)
+            print(f"📋 Traceback: {traceback.format_exc()}")
+            
+            # Try to provide more specific error information
+            if "transformers" in str(e).lower():
+                error_msg += "\n💡 Try installing: pip install transformers torch"
+            elif "cuda" in str(e).lower():
+                error_msg += "\n💡 CUDA issue - falling back to CPU"
+            elif "file" in str(e).lower() or "path" in str(e).lower():
+                error_msg += f"\n💡 Check if model path exists: {self.model_name}"
+            
             return error_msg
     
     def _call_generic_api(self, prompt: str, max_tokens: int, temperature: float) -> str:
@@ -293,7 +337,6 @@ class UniversalModelInterface:
         
         return result.get("text", "No response generated")
 
-@app.on_event("startup")
 async def startup_event():
     """Initialize the RAG system on startup"""
     global query_analyzer, retriever, config, current_model_config
@@ -313,16 +356,16 @@ async def startup_event():
         retriever = DynamicRetriever()
         print(f"✅ Retriever initialized")
         
-        # Set default model (fallback to simple response for now)
+        # Set default model to Qwen local model (with increased resources)
         current_model_config = ModelConfig(
-            model_name="simple-fallback",
+            model_name="/datasets/ai/qwen/hub/models--Qwen--Qwen2.5-Math-1.5B-Instruct/snapshots/aafeb0fc6f22cbf0eaeed126eff8be45b0360a35",
             max_tokens=512,
             temperature=0.7
         )
         
         print("🎉 Universal RAG API Server ready!")
         print("📡 Supports: Local models, Gemini, OpenAI, HuggingFace, and custom APIs")
-        print(f"🤖 Default model: Simple Fallback (Python 3.8.18 compatible)")
+        print(f"🤖 Default model: Qwen 2.5 Math 1.5B (Local) - Single GPU Optimized")
         
     except Exception as e:
         print(f"❌ Failed to initialize server: {e}")
