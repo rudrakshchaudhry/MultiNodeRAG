@@ -12,7 +12,7 @@
 module load python/3.8.18
 
 # Navigate to project directory
-cd /home/rchaudhry_umass_edu/rag
+cd /home/rchaudhry_umass_edu/rag/dolphinOcr
 
 # Activate virtual environment
 source venv/bin/activate
@@ -38,5 +38,5 @@ echo "Tests query complexity analysis approach"
 echo ""
 
 # Run the simplified test suite
-cd src/rag_system
+cd rag_system
 python test_adaptive_rag.py

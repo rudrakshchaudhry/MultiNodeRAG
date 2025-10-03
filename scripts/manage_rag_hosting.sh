@@ -11,8 +11,8 @@ case "${1:-help}" in
         echo "🚀 Starting RAG API Hosting Service..."
         JOB_ID=$(sbatch run_universal_rag_hosting.slurm | awk '{print $4}')
         echo "✅ RAG API hosting job submitted with ID: $JOB_ID"
-        echo "📋 Monitor with: ./manage_rag_hosting.sh status"
-        echo "🔗 Check logs with: ./manage_rag_hosting.sh logs"
+        echo "📋 Monitor with: ./scripts/manage_rag_hosting.sh status"
+        echo "🔗 Check logs with: ./scripts/manage_rag_hosting.sh logs"
         ;;
     "persistent")
         echo "🔄 Starting Persistent RAG API Hosting..."
@@ -76,8 +76,8 @@ EOF
             if [ -n "$NODE" ]; then
                 echo "Node: $NODE"
                 echo "PID: $PID"
-                echo "API URL: http://$NODE:8081"
-                echo "Health Check: http://$NODE:8081/health"
+                echo "API URL: http://$NODE:8080"
+                echo "Health Check: http://$NODE:8080/health"
             fi
         else
             echo "No active RAG API process found"
@@ -104,11 +104,11 @@ EOF
         if [ -f "logs/rag_api.pid" ]; then
             NODE=$(squeue -u $USER --name=rag_api_host --format="%N" --noheader | head -1)
             if [ -n "$NODE" ]; then
-                echo "Testing connection to http://$NODE:8081..."
-                if curl -s http://$NODE:8081/health > /dev/null; then
+                echo "Testing connection to http://$NODE:8080..."
+                if curl -s http://$NODE:8080/health > /dev/null; then
                     echo "✅ RAG API is responding!"
                     echo "📊 Health Status:"
-                    curl -s http://$NODE:8081/health | python -m json.tool
+                    curl -s http://$NODE:8080/health | python -m json.tool
                 else
                     echo "❌ RAG API is not responding"
                 fi
@@ -129,9 +129,9 @@ EOF
             NODE=$(squeue -u $USER --name=rag_api_host --format="%N" --noheader | head -1)
             if [ -n "$NODE" ]; then
                 echo "Query: $2"
-                echo "API: http://$NODE:8081"
+                echo "API: http://$NODE:8080"
                 echo ""
-                curl -s -X POST http://$NODE:8081/query \
+                curl -s -X POST http://$NODE:8080/query \
                     -H "Content-Type: application/json" \
                     -d "{\"query\": \"$2\"}" | python -m json.tool
             else
@@ -147,14 +147,14 @@ EOF
         if [ -f "logs/rag_api.pid" ]; then
             NODE=$(squeue -u $USER --name=rag_api_host --format="%N" --noheader | head -1)
             if [ -n "$NODE" ]; then
-                echo "🌐 API Base URL: http://$NODE:8081"
-                echo "❤️  Health Check: http://$NODE:8081/health"
-                echo "📚 API Docs: http://$NODE:8081/docs"
-                echo "🔍 Query Endpoint: http://$NODE:8081/query"
-                echo "⚙️  Models Endpoint: http://$NODE:8081/models"
+                echo "🌐 API Base URL: http://$NODE:8080"
+                echo "❤️  Health Check: http://$NODE:8080/health"
+                echo "📚 API Docs: http://$NODE:8080/docs"
+                echo "🔍 Query Endpoint: http://$NODE:8080/query"
+                echo "⚙️  Models Endpoint: http://$NODE:8080/models"
                 echo ""
                 echo "📋 For your Next.js app:"
-                echo "NEXT_PUBLIC_RAG_API_URL=http://$NODE:8081"
+                echo "NEXT_PUBLIC_RAG_API_URL=http://$NODE:8080"
             else
                 echo "❌ No active RAG API node found"
             fi

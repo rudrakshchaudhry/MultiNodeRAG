@@ -12,14 +12,14 @@
 module load python/3.8.18
 
 # Navigate to project directory
-cd /home/rchaudhry_umass_edu/rag
+cd /home/rchaudhry_umass_edu/rag/dolphinOcr
 
 # Activate virtual environment
 source venv/bin/activate
 
 # Create necessary directories
 mkdir -p slurm_output
-mkdir -p tests/question_bank_reports
+mkdir -p question_bank_reports
 
 # Install pandas if not available
 pip install pandas
@@ -40,5 +40,4 @@ echo "Telemetry: $ADAPTIVE_RAG_ENABLE_TELEMETRY"
 echo ""
 
 # Run the question bank test
-cd tests
 python question_bank_test.py

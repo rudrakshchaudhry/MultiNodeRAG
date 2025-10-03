@@ -77,7 +77,7 @@ cleanup() {
 trap cleanup SIGTERM SIGINT
 
 # Start the universal RAG API server in background
-cd RAG_system
+cd rag_system
 # Set the port as an environment variable since the script doesn't accept CLI args
 export RAG_API_PORT=$PORT
 nohup python universal_rag_api.py > ../logs/rag_api.log 2>&1 &

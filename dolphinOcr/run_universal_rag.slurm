@@ -12,7 +12,7 @@
 module load python/3.8.18
 
 # Navigate to project directory
-cd /home/rchaudhry_umass_edu/rag
+cd /home/rchaudhry_umass_edu/rag/dolphinOcr
 
 # Activate virtual environment
 source venv/bin/activate
@@ -44,5 +44,5 @@ echo "Deployable anywhere with any transformer model"
 echo ""
 
 # Start the universal RAG API server
-cd src/rag_system
+cd rag_system
 python universal_rag_api.py
