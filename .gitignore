@@ -1,3 +1,5 @@
+# MultiNodeRAG Production .gitignore
+
 # Python
 __pycache__/
 *.py[cod]
@@ -21,7 +23,7 @@ wheels/
 *.egg
 MANIFEST
 
-# Virtual environments
+# Virtual Environment
 venv/
 env/
 ENV/
@@ -35,55 +37,76 @@ venv.bak/
 *.swo
 *~
 
-# OS
-.DS_Store
-.DS_Store?
-._*
-.Spotlight-V100
-.Trashes
-ehthumbs.db
-Thumbs.db
-
-# Project specific
-slurm_output/
-logs/
-output/
-index_data/
+# Logs
 *.log
-*.pid
+logs/
+tunnel.log
+proxy.log
 
-# Model files
+# Temporary files
+*.tmp
+*.temp
+*.pid
+last_job.txt
+tunnel.pid
+reverse_proxy.pid
+cloudflare_tunnel.pid
+
+# Model files and indices
 *.bin
 *.safetensors
+*.pkl
+*.faiss
+index_data/
+models/
 checkpoints/
 
-# Data files
-*.pdf
-*.pkl
-*.npy
-*.json
-!requirements.txt
-!data/question_bank.json
+# SLURM outputs
+slurm_output/
+*.out
+*.err
 
-# Keep directory structure
-!src/ocr/pdf_by_chapter/.gitkeep
-!output/.gitkeep
-!src/rag_system/index_data/.gitkeep
-
-# Environment variables
+# Configuration files with secrets
 .env
-.env.local
-.env.production
+*.key
+*.pem
+tunnel-credentials.json
+persistent-tunnel-config.yml
+tunnel-config.yml
 
-# Jupyter
+# OS
+.DS_Store
+Thumbs.db
+
+# Jupyter Notebooks
 .ipynb_checkpoints/
 
-# Testing
-.pytest_cache/
-.coverage
-htmlcov/
+# Data files
+*.csv
+*.json
+*.xml
+*.pdf
+output/
+data/
 
-# Documentation
+# Cache
+.cache/
+.pytest_cache/
+
+# Coverage reports
+htmlcov/
+.coverage
+.coverage.*
+coverage.xml
+*.cover
+.hypothesis/
+
+# Documentation builds
 docs/_build/
-src/ocr/pdf_by_chapter/*.pdf
-!src/ocr/pdf_by_chapter/.gitkeep
+site/
+
+# Keep essential structure
+!dolphinOcr/rag_creation/index_data/.gitkeep
+!dolphinOcr/pdf_processing/output/.gitkeep
+!dolphinOcr/slurm_output/.gitkeep
+!dolphinOcr/logs/.gitkeep
