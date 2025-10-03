@@ -10,14 +10,19 @@
 #SBATCH --signal=SIGTERM@120
 #SBATCH --requeue
 
-# Load Python 3.8.18
-module load python/3.8.18
+# Load Python 3.12.3 (compatible with current system)
+module load python/3.12.3
 
 # Navigate to project directory
 cd /home/rchaudhry_umass_edu/rag
 
-# Activate virtual environment
+# Activate virtual environment and verify
 source venv/bin/activate
+echo "Virtual environment activated"
+echo "Python path: $(which python)"
+echo "Python version: $(python --version)"
+echo "Installed packages:"
+pip list | head -10
 
 # Create necessary directories
 mkdir -p slurm_output
@@ -80,7 +85,13 @@ trap cleanup SIGTERM SIGINT
 cd rag_system
 # Set the port as an environment variable since the script doesn't accept CLI args
 export RAG_API_PORT=$PORT
-nohup python universal_rag_api.py > ../logs/rag_api.log 2>&1 &
+# Use virtual environment Python directly
+VENV_PYTHON="/home/rchaudhry_umass_edu/rag/venv/bin/python"
+echo "Starting API with Python: $VENV_PYTHON"
+echo "Python version: $($VENV_PYTHON --version)"
+echo "Virtual environment packages:"
+$VENV_PYTHON -m pip list | head -10
+nohup $VENV_PYTHON universal_rag_api.py > ../logs/rag_api.log 2>&1 &
 API_PID=$!
 
 # Save PID
@@ -116,7 +127,9 @@ while kill -0 $API_PID 2>/dev/null; do
         echo "❌ RAG API server is not responding, restarting..."
         kill -TERM $API_PID
         sleep 5
-        nohup python universal_rag_api.py > ../logs/rag_api.log 2>&1 &
+        VENV_PYTHON="/home/rchaudhry_umass_edu/rag/venv/bin/python"
+        echo "Restarting with Python: $VENV_PYTHON"
+        nohup $VENV_PYTHON universal_rag_api.py > ../logs/rag_api.log 2>&1 &
         API_PID=$!
         echo $API_PID > ../logs/rag_api.pid
         echo "✅ RAG API server restarted with PID: $API_PID"
