@@ -44,39 +44,46 @@ venv.bak/
 ehthumbs.db
 Thumbs.db
 
-# Logs
-*.log
-logs/
+# Project specific
 slurm_output/
-
-# Temporary files
-*.tmp
-*.temp
+logs/
+output/
+index_data/
+*.log
 *.pid
 
-# Model files and checkpoints (too large for git)
+# Model files
 *.bin
 *.safetensors
 checkpoints/
-models/
 
 # Data files
+*.pdf
 *.pkl
 *.npy
-*.index
-index_data/
+*.json
+!requirements.txt
+!data/question_bank.json
 
-# Results and outputs
-results/
-output/
+# Keep directory structure
+!src/ocr/pdf_by_chapter/.gitkeep
+!output/.gitkeep
+!src/rag_system/index_data/.gitkeep
 
 # Environment variables
 .env
-keys.env
+.env.local
+.env.production
 
 # Jupyter
 .ipynb_checkpoints/
 
-# SLURM
-*.out
-*.err
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Documentation
+docs/_build/
+src/ocr/pdf_by_chapter/*.pdf
+!src/ocr/pdf_by_chapter/.gitkeep
