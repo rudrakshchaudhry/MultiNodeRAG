@@ -1,0 +1,11 @@
+{
+  "num_documents": 250,
+  "num_chunks": 601,
+  "chunk_size": 512,
+  "overlap": 100,
+  "embedding_model": "BAAI/bge-small-en-v1.5",
+  "embedding_dimension": 384,
+  "index_type": "IndexFlatIP",
+  "similarity_metric": "cosine",
+  "math_enhancement_enabled": true
+}

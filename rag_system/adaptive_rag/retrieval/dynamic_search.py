@@ -28,7 +28,7 @@ class DynamicRetriever:
     
     def __init__(self, index_dir: str = None, embed_model: str = None):
         self.config = get_adaptive_config()
-        self.index_dir = index_dir or '/home/rchaudhry_umass_edu/rag/rag_creation/index_data'
+        self.index_dir = index_dir or '/home/rchaudhry_umass_edu/rag/data/index_data'
         self.embed_model = embed_model or 'BAAI/bge-small-en-v1.5'
         
         # Initialize components

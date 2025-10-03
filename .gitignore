@@ -1,5 +1,3 @@
-# MultiNodeRAG Production .gitignore
-
 # Python
 __pycache__/
 *.py[cod]
@@ -27,86 +25,52 @@ MANIFEST
 venv/
 env/
 ENV/
-env.bak/
-venv.bak/
+
+# Logs
+logs/
+*.log
+tunnel.log
+proxy.log
+
+# SLURM
+slurm_output/
+*.out
+*.err
+
+# Process IDs
+*.pid
+tunnel.pid
+reverse_proxy.pid
+cloudflare_tunnel.pid
+last_job.txt
+
+# Data (keep structure, ignore large files)
+data/output/
+data/index_data/*.npy
+data/index_data/*.pkl
+data/index_data/*.index
+
+# Temporary files
+*.tmp
+*.temp
+.nfs*
 
 # IDE
 .vscode/
 .idea/
 *.swp
 *.swo
-*~
-
-# Logs
-*.log
-logs/
-tunnel.log
-proxy.log
-
-# Temporary files
-*.tmp
-*.temp
-*.pid
-last_job.txt
-tunnel.pid
-reverse_proxy.pid
-cloudflare_tunnel.pid
-
-# Model files and indices
-*.bin
-*.safetensors
-*.pkl
-*.faiss
-index_data/
-models/
-checkpoints/
-
-# SLURM outputs
-slurm_output/
-*.out
-*.err
-
-# Configuration files with secrets
-.env
-*.key
-*.pem
-tunnel-credentials.json
-persistent-tunnel-config.yml
-tunnel-config.yml
 
 # OS
 .DS_Store
 Thumbs.db
 
-# Jupyter Notebooks
-.ipynb_checkpoints/
+# Cloudflare
+tunnel-config.yml
+persistent-tunnel-config.yml
+tunnel-credentials.json
 
-# Data files
-*.csv
-*.json
-*.xml
-*.pdf
-output/
-data/
-
-# Cache
-.cache/
-.pytest_cache/
-
-# Coverage reports
-htmlcov/
-.coverage
-.coverage.*
-coverage.xml
-*.cover
-.hypothesis/
-
-# Documentation builds
-docs/_build/
-site/
-
-# Keep essential structure
-!rag_creation/index_data/.gitkeep
-!pdf_processing/output/.gitkeep
-!slurm_output/.gitkeep
+# Keep important structure files
+!data/index_data/.gitkeep
+!data/output/.gitkeep
 !logs/.gitkeep
