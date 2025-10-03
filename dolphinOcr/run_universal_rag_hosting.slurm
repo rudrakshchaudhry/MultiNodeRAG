@@ -6,14 +6,15 @@
 #SBATCH --gres=gpu:a100:1
 #SBATCH --cpus-per-task=8
 #SBATCH --mem=32GB
-#SBATCH --time=24:00:00
+#SBATCH --time=23:30:00
 #SBATCH --signal=SIGTERM@120
+#SBATCH --requeue
 
 # Load Python 3.8.18
 module load python/3.8.18
 
 # Navigate to project directory
-cd /home/rchaudhry_umass_edu/rag
+cd /home/rchaudhry_umass_edu/rag/dolphinOcr
 
 # Activate virtual environment
 source venv/bin/activate
@@ -76,14 +77,14 @@ cleanup() {
 trap cleanup SIGTERM SIGINT
 
 # Start the universal RAG API server in background
-cd src/rag_system
+cd RAG_system
 # Set the port as an environment variable since the script doesn't accept CLI args
 export RAG_API_PORT=$PORT
 nohup python universal_rag_api.py > ../logs/rag_api.log 2>&1 &
 API_PID=$!
 
 # Save PID
-echo $API_PID > ../$PID_FILE
+echo $API_PID > ../logs/rag_api.pid
 
 echo "✅ RAG API server started with PID: $API_PID"
 echo "📋 Logs: logs/rag_api.log"
@@ -115,9 +116,9 @@ while kill -0 $API_PID 2>/dev/null; do
         echo "❌ RAG API server is not responding, restarting..."
         kill -TERM $API_PID
         sleep 5
-        nohup python universal_rag_api.py --host 0.0.0.0 --port $PORT > ../logs/rag_api.log 2>&1 &
+        nohup python universal_rag_api.py > ../logs/rag_api.log 2>&1 &
         API_PID=$!
-        echo $API_PID > ../$PID_FILE
+        echo $API_PID > ../logs/rag_api.pid
         echo "✅ RAG API server restarted with PID: $API_PID"
     fi
 done

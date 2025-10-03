@@ -14,6 +14,37 @@ case "${1:-help}" in
         echo "📋 Monitor with: ./scripts/manage_rag_hosting.sh status"
         echo "🔗 Check logs with: ./scripts/manage_rag_hosting.sh logs"
         ;;
+    "persistent")
+        echo "🔄 Starting Persistent RAG API Hosting..."
+        echo "This will auto-restart jobs every 23.5 hours"
+        echo "Press Ctrl+C to stop"
+        echo ""
+        
+        # Create persistent hosting script
+        cat > persistent_rag_hosting.sh << 'EOF'
+#!/bin/bash
+while true; do
+    echo "$(date): Starting new RAG hosting job..."
+    JOB_ID=$(sbatch run_universal_rag_hosting.slurm | awk '{print $4}')
+    echo "$(date): Job ID: $JOB_ID"
+    
+    # Wait for job to complete (23.5 hours max)
+    while squeue -j $JOB_ID | grep -q $JOB_ID; do
+        sleep 300  # Check every 5 minutes
+    done
+    
+    echo "$(date): Job completed, resubmitting in 60 seconds..."
+    sleep 60
+done
+EOF
+        
+        chmod +x persistent_rag_hosting.sh
+        nohup ./persistent_rag_hosting.sh > persistent_hosting.log 2>&1 &
+        PERSISTENT_PID=$!
+        echo "✅ Persistent hosting started with PID: $PERSISTENT_PID"
+        echo "📋 Monitor with: tail -f persistent_hosting.log"
+        echo "🛑 Stop with: kill $PERSISTENT_PID"
+        ;;
     "stop")
         echo "🛑 Stopping RAG API Hosting Service..."
         # Find running RAG API jobs
@@ -45,8 +76,8 @@ case "${1:-help}" in
             if [ -n "$NODE" ]; then
                 echo "Node: $NODE"
                 echo "PID: $PID"
-                echo "API URL: http://$NODE:8080"
-                echo "Health Check: http://$NODE:8080/health"
+                echo "API URL: http://$NODE:8081"
+                echo "Health Check: http://$NODE:8081/health"
             fi
         else
             echo "No active RAG API process found"
@@ -73,11 +104,11 @@ case "${1:-help}" in
         if [ -f "logs/rag_api.pid" ]; then
             NODE=$(squeue -u $USER --name=rag_api_host --format="%N" --noheader | head -1)
             if [ -n "$NODE" ]; then
-                echo "Testing connection to http://$NODE:8080..."
-                if curl -s http://$NODE:8080/health > /dev/null; then
+                echo "Testing connection to http://$NODE:8081..."
+                if curl -s http://$NODE:8081/health > /dev/null; then
                     echo "✅ RAG API is responding!"
                     echo "📊 Health Status:"
-                    curl -s http://$NODE:8080/health | python -m json.tool
+                    curl -s http://$NODE:8081/health | python -m json.tool
                 else
                     echo "❌ RAG API is not responding"
                 fi
@@ -98,9 +129,9 @@ case "${1:-help}" in
             NODE=$(squeue -u $USER --name=rag_api_host --format="%N" --noheader | head -1)
             if [ -n "$NODE" ]; then
                 echo "Query: $2"
-                echo "API: http://$NODE:8080"
+                echo "API: http://$NODE:8081"
                 echo ""
-                curl -s -X POST http://$NODE:8080/query \
+                curl -s -X POST http://$NODE:8081/query \
                     -H "Content-Type: application/json" \
                     -d "{\"query\": \"$2\"}" | python -m json.tool
             else
@@ -116,14 +147,14 @@ case "${1:-help}" in
         if [ -f "logs/rag_api.pid" ]; then
             NODE=$(squeue -u $USER --name=rag_api_host --format="%N" --noheader | head -1)
             if [ -n "$NODE" ]; then
-                echo "🌐 API Base URL: http://$NODE:8080"
-                echo "❤️  Health Check: http://$NODE:8080/health"
-                echo "📚 API Docs: http://$NODE:8080/docs"
-                echo "🔍 Query Endpoint: http://$NODE:8080/query"
-                echo "⚙️  Models Endpoint: http://$NODE:8080/models"
+                echo "🌐 API Base URL: http://$NODE:8081"
+                echo "❤️  Health Check: http://$NODE:8081/health"
+                echo "📚 API Docs: http://$NODE:8081/docs"
+                echo "🔍 Query Endpoint: http://$NODE:8081/query"
+                echo "⚙️  Models Endpoint: http://$NODE:8081/models"
                 echo ""
                 echo "📋 For your Next.js app:"
-                echo "NEXT_PUBLIC_RAG_API_URL=http://$NODE:8080"
+                echo "NEXT_PUBLIC_RAG_API_URL=http://$NODE:8081"
             else
                 echo "❌ No active RAG API node found"
             fi
@@ -143,15 +174,16 @@ case "${1:-help}" in
         echo "Usage: $0 [command]"
         echo ""
         echo "Commands:"
-        echo "  start     - Start RAG API hosting service"
-        echo "  stop      - Stop RAG API hosting service"
-        echo "  restart   - Restart RAG API hosting service"
-        echo "  status    - Show hosting status and job information"
-        echo "  logs      - Show server and SLURM logs"
-        echo "  test      - Test API connection and health"
-        echo "  query     - Send a test query to the API"
-        echo "  url       - Show API URLs for integration"
-        echo "  help      - Show this help message"
+        echo "  start      - Start RAG API hosting service"
+        echo "  persistent - Start persistent 24/7 hosting (auto-restart)"
+        echo "  stop       - Stop RAG API hosting service"
+        echo "  restart    - Restart RAG API hosting service"
+        echo "  status     - Show hosting status and job information"
+        echo "  logs       - Show server and SLURM logs"
+        echo "  test       - Test API connection and health"
+        echo "  query      - Send a test query to the API"
+        echo "  url        - Show API URLs for integration"
+        echo "  help       - Show this help message"
         echo ""
         echo "Examples:"
         echo "  $0 start                    # Start the hosting service"
